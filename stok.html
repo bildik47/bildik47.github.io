@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ürün Sayacı</title>
+    <!-- iOS için meta etiketleri -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Ürün Sayacı">
+    <!-- iOS için ikon tanımlamaları -->
+    <link rel="apple-touch-icon" href="icon-180.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="icon-152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="icon-167.png">
+    <!-- Splash screen için -->
+    <link rel="apple-touch-startup-image" href="splash.png">
+    <link rel="manifest" href="manifest.json">
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #f5f5f5;
+            --text-color: #333;
+            --danger-color: #e74c3c;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 30px;
+        }
+        #imageContainer {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        #capturedImage {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .button, button {
+            display: inline-block;
+            width: calc(50% - 5px);
+            padding: 12px;
+            background-color: var(--primary-color);
+            color: white;
+            text-align: center;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+        .button:hover, button:hover {
+            background-color: #3a7bd5;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        #resultText {
+            margin-top: 20px;
+            font-weight: bold;
+            text-align: center;
+            color: var(--primary-color);
+        }
+        #productList {
+            list-style-type: none;
+            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 20px;
+        }
+        .product-item {
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        .product-item:hover {
+            transform: translateY(-5px);
+        }
+        .product-image {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            cursor: pointer;
+        }
+        .product-info {
+            padding: 15px;
+            text-align: center;
+        }
+        .product-quantity {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .product-date {
+            font-size: 12px;
+            color: #777;
+        }
+        .delete-button {
+            background-color: var(--danger-color);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+        .delete-button:hover {
+            background-color: #c0392b;
+        }
+        #modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.9);
+            -webkit-overflow-scrolling: touch;
+        }
+        #modalContent {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        #modalImage {
+            max-width: 90%;
+            max-height: 70%;
+            object-fit: contain;
+        }
+        #modalCaption {
+            width: 100%;
+            text-align: center;
+            color: white;
+            padding: 20px 0;
+            background-color: rgba(0,0,0,0.7);
+        }
+        #modalQuantity {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        #modalDate {
+            font-size: 14px;
+        }
+        #closeModal {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 1001;
+        }
+        #prevImage, #nextImage {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            color: white;
+            font-size: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 16px;
+            user-select: none;
+        }
+        #prevImage { left: 20px; }
+        #nextImage { right: 20px; }
+        @media (max-width: 600px) {
+            .button, button {
+                width: 100%;
+            }
+        }
+        .home-button {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .home-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="home-button" onclick="window.location.href='index.html'">Ana Sayfa</button>
+        <h1>Ürün Sayacı</h1>
+        <div id="imageContainer">
+            <img id="capturedImage" src="" alt="Çekilen Fotoğraf" style="display: none;">
+        </div>
+        <input type="file" id="imageInput" accept="image/*">
+        <label for="imageInput" class="button">Fotoğraf Seç</label>
+        <input type="number" id="quantityInput" placeholder="Ürün Miktarı">
+        <button id="saveButton">Kaydet</button>
+        <div id="resultText"></div>
+        <ul id="productList"></ul>
+    </div>
+
+    <div id="modal">
+        <span id="closeModal">&times;</span>
+        <div id="modalContent">
+            <img id="modalImage">
+            <div id="modalCaption">
+                <div id="modalQuantity"></div>
+                <div id="modalDate"></div>
+            </div>
+            <span id="prevImage">&#10094;</span>
+            <span id="nextImage">&#10095;</span>
+        </div>
+    </div>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        console.log('Service Worker registered with scope:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.error('Service Worker registration failed:', error);
+                    });
+            });
+        }
+        </script>
+    <script>
+        let products = [];
+        let currentProductIndex = 0;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('imageInput').addEventListener('change', handleImage);
+            document.getElementById('saveButton').addEventListener('click', saveProduct);
+            document.getElementById('closeModal').addEventListener('click', closeModal);
+            document.getElementById('prevImage').addEventListener('click', () => changeImage(-1));
+            document.getElementById('nextImage').addEventListener('click', () => changeImage(1));
+            loadProducts();
+        });
+
+        function handleImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = document.getElementById('capturedImage');
+                    img.src = e.target.result;
+                    img.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function saveProduct() {
+            const quantity = document.getElementById('quantityInput').value;
+            const image = document.getElementById('capturedImage').src;
+            
+            if (quantity && image) {
+                const product = { id: Date.now(), quantity: parseInt(quantity), image, date: new Date() };
+                products.push(product);
+                saveProductsToStorage();
+                
+                document.getElementById('resultText').textContent = `Ürün kaydedildi: ${quantity} adet`;
+                document.getElementById('quantityInput').value = '';
+                document.getElementById('capturedImage').src = '';
+                document.getElementById('capturedImage').style.display = 'none';
+                loadProducts();
+            } else {
+                alert("Lütfen bir fotoğraf seçin ve miktar girin.");
+            }
+        }
+
+        function loadProducts() {
+            const storedProducts = localStorage.getItem('products');
+            if (storedProducts) {
+                products = JSON.parse(storedProducts);
+            }
+
+            const list = document.getElementById('productList');
+            list.innerHTML = '';
+            products.forEach((product, index) => {
+                const li = document.createElement('li');
+                li.className = 'product-item';
+                
+                const img = document.createElement('img');
+                img.src = product.image;
+                img.className = 'product-image';
+                img.onclick = () => openModal(index);
+                li.appendChild(img);
+                
+                const info = document.createElement('div');
+                info.className = 'product-info';
+                
+                const quantity = document.createElement('div');
+                quantity.className = 'product-quantity';
+                quantity.textContent = `${product.quantity} adet`;
+                info.appendChild(quantity);
+                
+                const date = document.createElement('div');
+                date.className = 'product-date';
+                date.textContent = new Date(product.date).toLocaleString();
+                info.appendChild(date);
+                
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Sil';
+                deleteButton.className = 'delete-button';
+                deleteButton.onclick = (e) => {
+                    e.stopPropagation();
+                    deleteProduct(product.id);
+                };
+                info.appendChild(deleteButton);
+                
+                li.appendChild(info);
+                list.appendChild(li);
+            });
+        }
+
+        function deleteProduct(id) {
+            products = products.filter(product => product.id !== id);
+            saveProductsToStorage();
+            loadProducts();
+        }
+
+        function saveProductsToStorage() {
+            try {
+                localStorage.setItem('products', JSON.stringify(products));
+            } catch (e) {
+                console.error('Depolama hatası:', e);
+                alert('Ürün kaydedilirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.');
+            }
+        }
+
+        function openModal(index) {
+            currentProductIndex = index;
+            updateModalContent();
+            document.getElementById('modal').style.display = "block";
+            document.body.style.overflow = "hidden"; // Arka planın kaydırılmasını engelle
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = "none";
+            document.body.style.overflow = "auto"; // Arka plan kaydırmayı geri aç
+        }
+
+        function updateModalContent() {
+            const product = products[currentProductIndex];
+            const modalImg = document.getElementById('modalImage');
+            const modalQuantity = document.getElementById('modalQuantity');
+            const modalDate = document.getElementById('modalDate');
+            modalImg.src = product.image;
+            modalQuantity.textContent = `${product.quantity} adet`;
+            modalDate.textContent = `Tarih: ${new Date(product.date).toLocaleString()}`;
+        }
+
+        function changeImage(direction) {
+            currentProductIndex += direction;
+            if (currentProductIndex < 0) currentProductIndex = products.length - 1;
+            if (currentProductIndex >= products.length) currentProductIndex = 0;
+            updateModalContent();
+        }
+
+        // Modal dışına tıklandığında kapatma
+        document.getElementById('modal').addEventListener('click', function(event) {
+            if (event.target === this) {
+                closeModal();
+            }
+        });
+
+        // Dokunmatik kaydırma için
+        let touchStartY = 0;
+        let touchEndY = 0;
+
+        document.getElementById('modal').addEventListener('touchstart', function(event) {
+            touchStartY = event.changedTouches[0].screenY;
+        }, false);
+
+        document.getElementById('modal').addEventListener('touchend', function(event) {
+            touchEndY = event.changedTouches[0].screenY;
+            if (touchEndY < touchStartY) {
+                closeModal();
+            }
+        }, false);
+
+        // iOS için standalone mod kontrolü
+        if (("standalone" in window.navigator) && window.navigator.standalone) {
+            // PWA olarak çalışıyor, gerekli düzenlemeleri yap
+            document.addEventListener('click', function(event) {
+                if (event.target.tagName === 'A' && event.target.getAttribute('href')) {
+                    event.preventDefault();
+                    window.location = event.target.getAttribute('href');
+                }
+            }, false);
+        }
+
+        // Service Worker kaydı
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js')
+                .then(registration => console.log('Service Worker kaydedildi:', registration))
+                .catch(error => console.log('Service Worker kaydı başarısız:', error));
+        }
+    </script>
+</body>
+</html>
